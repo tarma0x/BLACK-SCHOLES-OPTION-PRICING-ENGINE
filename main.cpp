@@ -98,7 +98,7 @@ void printResults(Option opt) {
     std::cout << "Type:          " << opt.type  << std::endl;
 
     double price = blackScholes(opt);
-    std::cout << "Prezzo opzione: " << price << std::endl;
+    std::cout << "Option Price: " << price << std::endl;
     
     std::cout << "Delta: " << delta(opt) << std::endl;
 
@@ -121,7 +121,7 @@ std::vector<Option> loadCSV(std::string filename) {
     std::getline(file, line);
 
     if (!file.is_open()) {
-        std::cerr << "Errore: impossibile aprire il file " << filename << std::endl;
+        std::cerr << "Error: impossible to open file " << filename << std::endl;
         return options;
     }
 
