@@ -89,6 +89,23 @@ double rho(Option opt) {
     }
 }
 
+double impliedVolatility(Option opt) {
+    double sigma = 0.2; // punto di partenza
+    
+    for (int i = 0; i < 100; i++) {
+        opt.sigma = sigma;
+        double price  = blackScholes(opt);
+        double v      = vega(opt) * 100; // vega non diviso 100
+        double diff   = price - opt.marketPrice;
+
+        if (std::abs(diff) < 1e-6) break; // converge
+
+        sigma = sigma - diff / v;
+    }
+
+    return sigma;
+}
+
 void printResults(Option opt) {
     std::cout << "Spot Price:    " << opt.S     << std::endl;
     std::cout << "Strike Price:  " << opt.K     << std::endl;
@@ -111,19 +128,22 @@ void printResults(Option opt) {
     std::cout << "Rho: " << rho(opt) << std::endl;
 
     std::cout << "Market Price: " << opt.marketPrice << std::endl;
+
+    std::cout << "Impl. Vol: " << impliedVolatility(opt) * 100 << "%" << std::endl;
 }
 
 std::vector<Option> loadCSV(std::string filename) {
     std::vector<Option> options;
     std::ifstream file(filename);
-    std::string line;
-
-    std::getline(file, line);
-
     if (!file.is_open()) {
         std::cerr << "Error: impossible to open file " << filename << std::endl;
         return options;
     }
+    std::string line;
+
+    std::getline(file, line);
+
+
 
     while (std::getline(file, line)) {
         Option o;
@@ -148,12 +168,41 @@ std::vector<Option> loadCSV(std::string filename) {
     return options;
 }
 
+void saveCSV(std::vector<Option> options, std::string filename) {
+    std::ofstream out(filename);
+
+    // scrivi intestazione
+    out << "S,K,T,r,sigma,type,marketPrice,optionPrice,IV,delta,gamma,vega,theta,rho\n";
+
+    // per ogni opzione scrivi una riga con tutti i valori
+    for (auto o : options) {
+        out << o.S << ","
+            << o.K << ","
+            << o.T << ","
+            << o.r << ","
+            << o.sigma << ","
+            << o.type << ","
+            << o.marketPrice << ","
+            << blackScholes(o) << ","
+            << impliedVolatility(o) * 100 << ","
+            << delta(o) << ","
+            << gamma(o) << ","
+            << vega(o) << ","
+            << theta(o) << ","
+            << rho(o)
+            << "\n";
+    }
+}
+
 int main() {
     auto options = loadCSV("options.csv");
     for (auto o : options) {
         printResults(o);
         std::cout << "---\n\n";
     }
+
+    saveCSV(options, "results.csv");
+    std::cout << "Results saved in results.csv\n";
 
     return 0;
 }
